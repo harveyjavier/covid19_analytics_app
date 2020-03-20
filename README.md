@@ -1,6 +1,6 @@
 # COVID-19 Analytics App
 
-An application that displays COVID-19 data worldwide.
+An application that displays COVID-19 data worldwide using Flutter framework and https://github.com/NovelCOVID/api
 
 # Screenshots
 
