@@ -8,7 +8,6 @@ An application that displays COVID-19 data worldwide using Flutter framework and
 	<img height="480px" src="raw/sc1.png">
 	<img height="480px" src="raw/sc2.png">
 	<img height="480px" src="raw/sc3.png">
-	<img height="480px" src="raw/sc4.png">
 </span><br/>
 
 ## Setup
