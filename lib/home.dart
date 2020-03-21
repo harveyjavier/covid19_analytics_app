@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/animation.dart';
 import 'package:http/http.dart' as http;
 import 'package:date_format/date_format.dart';
+import 'package:charts_flutter/flutter.dart' as charts;
 import 'dart:convert' show json;
+import 'package:covid19_analytics_app/bar_chart.dart';
+import 'package:covid19_analytics_app/chart_data.dart';
 
 class Home extends StatefulWidget {
   @override
@@ -15,17 +18,22 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
   // AnimationController animationController;
   bool _isFetching = false;
   Map _allData;
+  final List<ChartData> _chartData = [];
 
-  void _fetchAllData() async {
+  void _fetchChartData() async {
     if (!_isFetching) {
       setState(() {
         _isFetching = true;
       });
 
       final response = await http.get("https://corona.lmao.ninja/all");
+      print(response.statusCode);
       if (response.statusCode == 200) {
         setState(() {
           _allData = json.decode(response.body);
+          _chartData.insert(0, ChartData(name:"Cases", amount:json.decode(response.body)["cases"], barColor: charts.ColorUtil.fromDartColor(Colors.blue)));
+          _chartData.insert(1, ChartData(name:"Recovered", amount:json.decode(response.body)["recovered"], barColor: charts.ColorUtil.fromDartColor(Colors.green)));
+          _chartData.insert(2, ChartData(name:"Deaths", amount:json.decode(response.body)["deaths"], barColor: charts.ColorUtil.fromDartColor(Colors.red)));
           _isFetching = false;
         });
       } else {
@@ -36,7 +44,7 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
             action: SnackBarAction(
               textColor: Colors.white,
               label: "Try Again",
-              onPressed: _fetchAllData,
+              onPressed: _fetchChartData,
             ),
           )
         );
@@ -61,7 +69,7 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
     //     setState(() {});
     //   });
     // animationController.forward();
-    _fetchAllData();
+    _fetchChartData();
   }
 
   @override
@@ -73,7 +81,7 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
         actions: <Widget>[
           IconButton(
             icon: Icon(Icons.refresh),
-            onPressed: _fetchAllData,
+            onPressed: _fetchChartData,
           ),
         ]
       ),
@@ -88,25 +96,20 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
                 <Widget>[
                   SizedBox(
                     child: CircularProgressIndicator(
-                      strokeWidth: 10.0,
+                      strokeWidth: 5.0,
                       valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
                     ),
-                    height: 100.0, width: 100.0,
+                    height: 50.0, width: 50.0,
                   ),
                 ]
               : <Widget>[
-                  Image.asset(
-                    "assets/images/app_logo.png",
-                    width: 240,
-                    height: 240,
-                    fit:BoxFit.fill,
-                  ),
+                  BarChart(data: _chartData),
                   SizedBox( height: 20.0 ),
                   Text("COVID-19", style: TextStyle(fontFamily: "GothamRndBold", fontSize: 30, color: Colors.blue)),
                   SizedBox( height: 20.0 ),
                   Text("Cases: " + _allData["cases"].toString(), style: TextStyle(fontFamily: "GothamRndMedium", fontSize: 24, color: Colors.blue)),
-                  Text("Deaths: " + _allData["deaths"].toString(), style: TextStyle(fontFamily: "GothamRndMedium", fontSize: 24, color: Colors.red)),
                   Text("Recovered: " + _allData["recovered"].toString(), style: TextStyle(fontFamily: "GothamRndMedium", fontSize: 24, color: Colors.green)),
+                  Text("Deaths: " + _allData["deaths"].toString(), style: TextStyle(fontFamily: "GothamRndMedium", fontSize: 24, color: Colors.red)),
                   SizedBox( height: 5.0 ),
                   Text("as of " + _timestampToDate(_allData["recovered"]), style: TextStyle(fontFamily: "GothamRndMedium", fontSize: 20, color: Colors.blue)),
                   SizedBox( height: 20.0 ),

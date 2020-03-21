@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:pull_to_refresh/pull_to_refresh.dart';
+import 'package:charts_flutter/flutter.dart' as charts;
 import 'dart:convert' show json;
+import 'package:covid19_analytics_app/bar_chart.dart';
+import 'package:covid19_analytics_app/chart_data.dart';
 
 class Countries extends StatefulWidget {
   @override
@@ -18,39 +21,6 @@ class _CountriesState extends State<Countries> {
   List<Widget> buildList() {
     return List.generate(_countriesDataSearched.length, (i) =>
       InkWell(
-        onTap: () => {
-          showDialog(
-            context: context,
-            builder: (BuildContext context) {
-              // return object of type Dialog
-              return AlertDialog(
-                title: Text(" " + _countriesDataSearched[i]["country"], style: TextStyle(fontFamily: "GothamRndBold", fontSize: 24, color: Colors.blue)),
-                content: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[
-                      Text("Total Cases: " + _countriesDataSearched[i]["cases"].toString(), style: TextStyle(fontFamily: "GothamRndMedium", fontSize: 20, color: Colors.blue)),
-                      Text("Total Deaths: " + _countriesDataSearched[i]["deaths"].toString(), style: TextStyle(fontFamily: "GothamRndMedium", fontSize: 20, color: Colors.red)),
-                      Text("Total Recoveries: " + _countriesDataSearched[i]["recovered"].toString(), style: TextStyle(fontFamily: "GothamRndMedium", fontSize: 20, color: Colors.green)),
-                      SizedBox( height: 20.0 ),
-                      Text("Cases Today: " + _countriesDataSearched[i]["todayCases"].toString(), style: TextStyle(fontFamily: "GothamRndMedium", fontSize: 20, color: Colors.blue)),
-                      Text("Deaths Today: " + _countriesDataSearched[i]["todayDeaths"].toString(), style: TextStyle(fontFamily: "GothamRndMedium", fontSize: 20, color: Colors.red)),
-                      SizedBox( height: 20.0 ),
-                      Text("Active: " + _countriesDataSearched[i]["active"].toString(), style: TextStyle(fontFamily: "GothamRndMedium", fontSize: 20, color: Colors.blue)),
-                      Text("Critical: " + _countriesDataSearched[i]["critical"].toString(), style: TextStyle(fontFamily: "GothamRndMedium", fontSize: 20, color: Colors.orange)),
-                      SizedBox( height: 20.0 ),
-                      Text("Cases Per One Million: " + _countriesDataSearched[i]["casesPerOneMillion"].toString(), style: TextStyle(fontFamily: "GothamRndMedium", fontSize: 20, color: Colors.blue)),
-                    ],
-                ),
-                actions: <Widget>[
-                  FlatButton(
-                    child: Text("CLOSE", style: TextStyle(fontFamily: "GothamRndMedium", color: Colors.blue)),
-                    onPressed: () { Navigator.of(context).pop(); },
-                  ),
-                ],
-              );
-            }
-          )
-        },
         child: Padding(
           padding: const EdgeInsets.all(5.0),
           child: Card(
@@ -68,7 +38,32 @@ class _CountriesState extends State<Countries> {
                     ],
                   ),
                 ),
-                SizedBox( height: 10.0 ),
+                Divider(color: Colors.grey.shade300, height: 8.0),
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: BarChart(data: [
+                    ChartData(name:"Cases", amount:_countriesDataSearched[i]["cases"], barColor: charts.ColorUtil.fromDartColor(Colors.blue)),
+                    ChartData(name:"Recovered", amount:_countriesDataSearched[i]["recovered"], barColor: charts.ColorUtil.fromDartColor(Colors.green)),
+                    ChartData(name:"Deaths", amount:_countriesDataSearched[i]["deaths"], barColor: charts.ColorUtil.fromDartColor(Colors.red)),
+                  ]),
+                ),
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    Text("Total Cases: " + _countriesDataSearched[i]["cases"].toString(), style: TextStyle(fontFamily: "GothamRndMedium", fontSize: 15, color: Colors.blue)),
+                    Text("Total Recovered: " + _countriesDataSearched[i]["recovered"].toString(), style: TextStyle(fontFamily: "GothamRndMedium", fontSize: 15, color: Colors.green)),
+                    Text("Total Deaths: " + _countriesDataSearched[i]["deaths"].toString(), style: TextStyle(fontFamily: "GothamRndMedium", fontSize: 15, color: Colors.red)),
+                    SizedBox( height: 10.0 ),
+                    Text("Cases Today: " + _countriesDataSearched[i]["todayCases"].toString(), style: TextStyle(fontFamily: "GothamRndMedium", fontSize: 15, color: Colors.blue)),
+                    Text("Deaths Today: " + _countriesDataSearched[i]["todayDeaths"].toString(), style: TextStyle(fontFamily: "GothamRndMedium", fontSize: 15, color: Colors.red)),
+                    SizedBox( height: 10.0 ),
+                    Text("Active: " + _countriesDataSearched[i]["active"].toString(), style: TextStyle(fontFamily: "GothamRndMedium", fontSize: 15, color: Colors.blue)),
+                    Text("Critical: " + _countriesDataSearched[i]["critical"].toString(), style: TextStyle(fontFamily: "GothamRndMedium", fontSize: 15, color: Colors.orange)),
+                    SizedBox( height: 10.0 ),
+                    Text("Cases Per One Million: " + _countriesDataSearched[i]["casesPerOneMillion"].toString(), style: TextStyle(fontFamily: "GothamRndMedium", fontSize: 15, color: Colors.blue)),
+                  ],
+                ),
+                SizedBox( height: 20.0 ),
               ],
             ),
           ),
@@ -156,10 +151,10 @@ class _CountriesState extends State<Countries> {
           child: Center(
             child: SizedBox(
               child: CircularProgressIndicator(
-                strokeWidth: 10.0,
+                strokeWidth: 5.0,
                 valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
               ),
-              height: 100.0, width: 100.0,
+              height: 50.0, width: 50.0,
             ),
           ),
         )
