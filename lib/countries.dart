@@ -33,8 +33,12 @@ class _CountriesState extends State<Countries> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween, //MainAxisAlignment.start
                     children: <Widget>[
-                      Text(" " + _countriesDataSearched[i]["country"], style: TextStyle(fontFamily: "GothamRndMedium", fontSize: 24, color: Colors.blue)),
-                      Text(_countriesDataSearched[i]["cases"].toString(), style: TextStyle(fontFamily: "GothamRndBold", fontSize: 24, color: Colors.blue)),
+                      SizedBox(
+                        child: Image.network(_countriesDataSearched[i]["countryInfo"]["flag"]),
+                        height: 30.0,
+                      ),
+                      Text(" " + _countriesDataSearched[i]["country"], style: TextStyle(fontFamily: "GothamRndMedium", fontSize: 24, color: Color(0XFF002948))),
+                      Text(_countriesDataSearched[i]["cases"].toString(), style: TextStyle(fontFamily: "GothamRndBold", fontSize: 24, color: Color(0XFF01579B))),
                     ],
                   ),
                 ),
@@ -42,15 +46,17 @@ class _CountriesState extends State<Countries> {
                 Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: BarChart(data: [
-                    ChartData(name:"Cases", amount:_countriesDataSearched[i]["cases"], barColor: charts.ColorUtil.fromDartColor(Colors.blue)),
+                    ChartData(name:"Cases", amount:_countriesDataSearched[i]["cases"], barColor: charts.ColorUtil.fromDartColor(Color(0XFF01579B))),
                     ChartData(name:"Recovered", amount:_countriesDataSearched[i]["recovered"], barColor: charts.ColorUtil.fromDartColor(Colors.green)),
                     ChartData(name:"Deaths", amount:_countriesDataSearched[i]["deaths"], barColor: charts.ColorUtil.fromDartColor(Colors.red)),
+                    ChartData(name:"Active", amount:_countriesDataSearched[i]["active"], barColor: charts.ColorUtil.fromDartColor(Colors.blue)),
+                    ChartData(name:"Critical", amount:_countriesDataSearched[i]["critical"], barColor: charts.ColorUtil.fromDartColor(Colors.orange)),
                   ]),
                 ),
                 Column(
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
-                    Text("Total Cases: " + _countriesDataSearched[i]["cases"].toString(), style: TextStyle(fontFamily: "GothamRndMedium", fontSize: 15, color: Colors.blue)),
+                    Text("Total Cases: " + _countriesDataSearched[i]["cases"].toString(), style: TextStyle(fontFamily: "GothamRndMedium", fontSize: 15, color: Color(0XFF01579B))),
                     Text("Total Recovered: " + _countriesDataSearched[i]["recovered"].toString(), style: TextStyle(fontFamily: "GothamRndMedium", fontSize: 15, color: Colors.green)),
                     Text("Total Deaths: " + _countriesDataSearched[i]["deaths"].toString(), style: TextStyle(fontFamily: "GothamRndMedium", fontSize: 15, color: Colors.red)),
                     SizedBox( height: 10.0 ),

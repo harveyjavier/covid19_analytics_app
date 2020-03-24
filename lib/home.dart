@@ -31,7 +31,7 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
       if (response.statusCode == 200) {
         setState(() {
           _allData = json.decode(response.body);
-          _chartData.insert(0, ChartData(name:"Cases", amount:json.decode(response.body)["cases"], barColor: charts.ColorUtil.fromDartColor(Colors.blue)));
+          _chartData.insert(0, ChartData(name:"Cases", amount:json.decode(response.body)["cases"], barColor: charts.ColorUtil.fromDartColor(Color(0XFF002948))));
           _chartData.insert(1, ChartData(name:"Recovered", amount:json.decode(response.body)["recovered"], barColor: charts.ColorUtil.fromDartColor(Colors.green)));
           _chartData.insert(2, ChartData(name:"Deaths", amount:json.decode(response.body)["deaths"], barColor: charts.ColorUtil.fromDartColor(Colors.red)));
           _isFetching = false;
@@ -107,7 +107,7 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
                   SizedBox( height: 20.0 ),
                   Text("COVID-19", style: TextStyle(fontFamily: "GothamRndBold", fontSize: 30, color: Colors.blue)),
                   SizedBox( height: 20.0 ),
-                  Text("Cases: " + _allData["cases"].toString(), style: TextStyle(fontFamily: "GothamRndMedium", fontSize: 24, color: Colors.blue)),
+                  Text("Cases: " + _allData["cases"].toString(), style: TextStyle(fontFamily: "GothamRndMedium", fontSize: 24, color: Color(0XFF002948))),
                   Text("Recovered: " + _allData["recovered"].toString(), style: TextStyle(fontFamily: "GothamRndMedium", fontSize: 24, color: Colors.green)),
                   Text("Deaths: " + _allData["deaths"].toString(), style: TextStyle(fontFamily: "GothamRndMedium", fontSize: 24, color: Colors.red)),
                   SizedBox( height: 5.0 ),
