@@ -24,6 +24,7 @@ class _CountriesState extends State<Countries> {
         child: Padding(
           padding: const EdgeInsets.all(5.0),
           child: Card(
+            color: Color(0XFFeefaff),
             elevation: 2.0,
             child: Column(
               children: <Widget>[
