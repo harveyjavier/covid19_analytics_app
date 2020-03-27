@@ -24,6 +24,7 @@ class _CountriesState extends State<Countries> {
         child: Padding(
           padding: const EdgeInsets.all(5.0),
           child: Card(
+            color: Color(0XFFeefaff),
             elevation: 2.0,
             child: Column(
               children: <Widget>[
@@ -91,6 +92,8 @@ class _CountriesState extends State<Countries> {
           _countriesDataSearched = json.decode(response.body);
           _isFetching = false;
         });
+        _countriesData.sort((a, b) => (b["cases"]).compareTo(a["cases"]));
+        _countriesDataSearched.sort((a, b) => (b["cases"]).compareTo(a["cases"]));
         _refreshController.refreshCompleted();
       } else {
         _scaffoldKey.currentState.showSnackBar(
