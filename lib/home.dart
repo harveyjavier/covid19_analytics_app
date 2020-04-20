@@ -26,12 +26,12 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
         _isFetching = true;
       });
 
-      final response = await http.get("https://corona.lmao.ninja/all");
+      final response = await http.get("https://corona.lmao.ninja/v2/all");
       print(response.statusCode);
       if (response.statusCode == 200) {
         setState(() {
           _allData = json.decode(response.body);
-          _chartData.insert(0, ChartData(name:"Cases", amount:json.decode(response.body)["cases"], barColor: charts.ColorUtil.fromDartColor(Color(0XFF002948))));
+          _chartData.insert(0, ChartData(name:"Cases", amount:json.decode(response.body)["cases"], barColor: charts.ColorUtil.fromDartColor(Color(0XFF01579B))));
           _chartData.insert(1, ChartData(name:"Recovered", amount:json.decode(response.body)["recovered"], barColor: charts.ColorUtil.fromDartColor(Colors.green)));
           _chartData.insert(2, ChartData(name:"Deaths", amount:json.decode(response.body)["deaths"], barColor: charts.ColorUtil.fromDartColor(Colors.red)));
           _isFetching = false;
@@ -130,10 +130,17 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
         ),
       ),
       bottomNavigationBar: Container(
-        height: 40.0,
+        height: 60.0,
         color: Colors.white,
         child: Center(
-          child: Text("© Harvz", style: TextStyle(fontFamily: "GothamRndMedium", fontSize: 17, color: Colors.blue)),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: <Widget>[
+              Text("v1.3.0", style: TextStyle(fontFamily: "GothamRndMedium", fontSize: 17, color: Colors.blue)),
+              Text("© Harvz", style: TextStyle(fontFamily: "GothamRndMedium", fontSize: 17, color: Colors.blue)),
+            ],
+          )
         ),
       ),
     );
