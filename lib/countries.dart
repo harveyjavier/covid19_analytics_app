@@ -85,7 +85,7 @@ class _CountriesState extends State<Countries> {
         _isFetching = true;
       });
 
-      final response = await http.get("https://corona.lmao.ninja/countries");
+      final response = await http.get("https://corona.lmao.ninja/v2/countries");
       if (response.statusCode == 200) {
         setState(() {
           _countriesData = json.decode(response.body);
@@ -134,7 +134,10 @@ class _CountriesState extends State<Countries> {
           decoration: InputDecoration(
             hintText: "Search",
             hintStyle: TextStyle(fontFamily: "GothamRndMedium", fontSize: 20, color: Colors.white),
-            suffixIcon: Icon(Icons.search, color: Colors.white)
+            suffixIcon: Icon(Icons.search, color: Colors.white),
+            enabledBorder: UnderlineInputBorder(      
+              borderSide: BorderSide(color: Colors.white),   
+            ),
           ),
           style: TextStyle(
             fontFamily: "GothamRndMedium",
@@ -143,9 +146,8 @@ class _CountriesState extends State<Countries> {
           ),
           onChanged: (text){
             text = text.toLowerCase();
-            if (text == "") {
-              setState(() { _countriesDataSearched = _countriesData; });
-            } else {
+            setState(() { _countriesDataSearched = _countriesData; });
+            if (text != "") {
               setState(() {
                 _countriesDataSearched = _countriesDataSearched.where((country) {
                   return country["country"].toLowerCase().contains(text);
