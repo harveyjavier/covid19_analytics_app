@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import 'package:covid19_analytics_app/home.dart';
 import 'package:covid19_analytics_app/countries.dart';
+import 'package:covid19_analytics_app/map.dart';
 
 class App extends StatelessWidget {
   final materialApp = MaterialApp(
@@ -21,6 +22,7 @@ class App extends StatelessWidget {
     routes: <String, WidgetBuilder>{
       "routeHome": (BuildContext context) => Home(),
       "routeCountries": (BuildContext context) => Countries(),
+      "routeMap": (BuildContext context) => GMap(),
     },
   );
 

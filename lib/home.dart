@@ -4,8 +4,10 @@ import 'package:http/http.dart' as http;
 import 'package:date_format/date_format.dart';
 import 'package:charts_flutter/flutter.dart' as charts;
 import 'dart:convert' show json;
+import 'dart:io';
 import 'package:covid19_analytics_app/bar_chart.dart';
 import 'package:covid19_analytics_app/chart_data.dart';
+import 'package:covid19_analytics_app/drawer.dart';
 
 class Home extends StatefulWidget {
   @override
@@ -19,6 +21,7 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
   bool _isFetching = false;
   Map _allData;
   final List<ChartData> _chartData = [];
+  String _ipAddress;
 
   void _fetchChartData() async {
     if (!_isFetching) {
@@ -27,7 +30,7 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
       });
 
       final response = await http.get("https://corona.lmao.ninja/v2/all");
-      print(response.statusCode);
+      //print(response.statusCode);
       if (response.statusCode == 200) {
         setState(() {
           _allData = json.decode(response.body);
@@ -70,12 +73,27 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
     //   });
     // animationController.forward();
     _fetchChartData();
+
+    NetworkInterface.list(includeLoopback: false, type: InternetAddressType.any).then((List<NetworkInterface> interfaces) {
+      setState( () {
+        _ipAddress = "";
+        interfaces.forEach((interface) {
+          //_ipAddress += "### name: ${interface.name}\n";
+          int i = 0;
+          interface.addresses.forEach((address) {
+            _ipAddress += "${i++}) ${address.address}\n";
+          });
+        });
+      });
+      print(_ipAddress);
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       key: _scaffoldKey,
+      drawer: AppDrawer(current_screen: "routeHome"),
       appBar: AppBar(
         title: Text("COVID-19 Analytics", style: TextStyle(fontFamily: "GothamRndMedium")),
         actions: <Widget>[
@@ -137,7 +155,7 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: <Widget>[
-              Text("v1.3.0", style: TextStyle(fontFamily: "GothamRndMedium", fontSize: 17, color: Colors.blue)),
+              Text("v2.0.0", style: TextStyle(fontFamily: "GothamRndMedium", fontSize: 17, color: Colors.blue)),
               Text("© Harvz", style: TextStyle(fontFamily: "GothamRndMedium", fontSize: 17, color: Colors.blue)),
             ],
           )
