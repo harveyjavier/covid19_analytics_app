@@ -22,16 +22,22 @@ class GMap extends StatefulWidget {
 class _GMapState extends State<GMap> with SingleTickerProviderStateMixin {
   final db = Firestore.instance;
   final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
-  bool _isLoading = true;
-  bool _isLocationBtnLoading = false;
   Completer<GoogleMapController> _controller = Completer();
   final Set<Marker> _markers = {};
   static final CameraPosition _position = CameraPosition(
     target: LatLng(0.0, 0.0),
     zoom: 14.0,
   );
+  bool _isIPfetched = false;
+  bool _isLocationFetched = false;
+  bool _isDataFetched = false;
+  bool _isLocationBtnLoading = false;
+  String _ipAddress;
+  double _currentLat;
+  double _currentLng;
+  Map _userData;
 
-  Future<void> _goToPosition(lat, lng) async {
+  void _goToPosition(lat, lng) async {
     final CameraPosition position = CameraPosition(
       target: LatLng(lat, lng),
       zoom: 14.0,
@@ -40,27 +46,78 @@ class _GMapState extends State<GMap> with SingleTickerProviderStateMixin {
     controller.animateCamera(CameraUpdate.newCameraPosition(position));
   }
 
-  Future<void> _getCurrentLocation() async {
+  void _getCurrentLocation() async {
     final position = await Geolocator().getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
     _goToPosition(position.latitude, position.longitude);
-    // DocumentReference ref = await db.collection("location_data").add({
-    //   "ip_address": "",
-    //   "data": [],
-    //   "created_at": FieldValue.serverTimestamp(),
-    //   "updated_at": null,
-    // });
     setState(() {
-      _isLoading = false;
+      _currentLat = position.latitude;
+      _currentLng = position.longitude;
       _isLocationBtnLoading = false;
+      _isLocationFetched = true;
+    });
+  }
+
+  void _addData() async {
+    Map data = {
+      "lat": _currentLat,
+      "lng": _currentLng,
+      "created_at": null, //FieldValue.serverTimestamp(),
+    };
+    DocumentReference ref = await db.collection("location_data").add({
+      "ip_address": _ipAddress,
+      "data": [data],
+      "created_at": FieldValue.serverTimestamp(),
+    });
+  }
+
+  void _fetchData() async {
+    final QuerySnapshot location_result = await db.collection("location_data").getDocuments();
+    final List<DocumentSnapshot> location_docs = location_result.documents;
+    //print(location_docs);
+    location_docs.forEach((d) {
+      print(d.documentID);
+      d.data["id"] = d.documentID;
+      if (d.data["ip_address"] == _ipAddress.toString()) {
+        setState(() {
+          _userData = d.data;
+        });
+        print(_userData);
+      }
+    });
+    if (_userData == null) {
+      _addData();
+    }
+    setState(() {
+      _isDataFetched = true;
+    });
+
+    //edit
+    //await db.collection("location_data").document(_posts[i]["id"]).updateData(
+  }
+
+  _getIPaddress(){
+    NetworkInterface.list(includeLoopback: false, type: InternetAddressType.any).then((List<NetworkInterface> interfaces) {
+      setState(() {
+        _ipAddress = "";
+        interfaces.forEach((interface) {
+          //_ipAddress += "### name: ${interface.name}\n";
+          interface.addresses.forEach((address) {
+            _ipAddress += "${address.address}";
+          });
+        });
+        _isIPfetched = true;
+      });
+      print(_ipAddress);
     });
   }
 
   _onCameraMove(CameraPosition position) {
-    print(position.target);
+    //print(position.target);
   }
 
   _onSearchLocationPressed() {
     setState(() {
+      _isLocationFetched = true;
       _isLocationBtnLoading = true;
     });
     _getCurrentLocation();
@@ -69,7 +126,9 @@ class _GMapState extends State<GMap> with SingleTickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
+    _getIPaddress();
     _getCurrentLocation();
+    _fetchData();
   }
 
   @override
@@ -86,23 +145,7 @@ class _GMapState extends State<GMap> with SingleTickerProviderStateMixin {
         //   ),
         // ]
       ),
-      body: _isLoading ?
-          Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: <Widget>[
-                SizedBox(
-                  child: CircularProgressIndicator(
-                    strokeWidth: 5.0,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
-                  ),
-                  height: 50.0, width: 50.0,
-                ),
-              ],
-            ),
-          )
-        :
+      body: _isIPfetched && _isLocationFetched && _isDataFetched ?
           Stack(
             children: <Widget>[
               GoogleMap(
@@ -137,6 +180,22 @@ class _GMapState extends State<GMap> with SingleTickerProviderStateMixin {
                 ),
               ),
             ],
+          )
+        :
+          Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: <Widget>[
+                SizedBox(
+                  child: CircularProgressIndicator(
+                    strokeWidth: 5.0,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+                  ),
+                  height: 50.0, width: 50.0,
+                ),
+              ],
+            ),
           ),
       bottomNavigationBar: Container(
         height: 60.0,

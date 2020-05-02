@@ -21,7 +21,6 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
   bool _isFetching = false;
   Map _allData;
   final List<ChartData> _chartData = [];
-  String _ipAddress;
 
   void _fetchChartData() async {
     if (!_isFetching) {
@@ -73,20 +72,6 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
     //   });
     // animationController.forward();
     _fetchChartData();
-
-    NetworkInterface.list(includeLoopback: false, type: InternetAddressType.any).then((List<NetworkInterface> interfaces) {
-      setState( () {
-        _ipAddress = "";
-        interfaces.forEach((interface) {
-          //_ipAddress += "### name: ${interface.name}\n";
-          int i = 0;
-          interface.addresses.forEach((address) {
-            _ipAddress += "${i++}) ${address.address}\n";
-          });
-        });
-      });
-      print(_ipAddress);
-    });
   }
 
   @override
