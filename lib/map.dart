@@ -5,6 +5,8 @@ import 'package:date_format/date_format.dart';
 import 'package:charts_flutter/flutter.dart' as charts;
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:localstorage/localstorage.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:convert' show json;
 import 'dart:io';
 import 'dart:async';
@@ -18,6 +20,7 @@ class GMap extends StatefulWidget {
 }
 
 class _GMapState extends State<GMap> with SingleTickerProviderStateMixin {
+  final db = Firestore.instance;
   final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
   bool _isLoading = true;
   bool _isLocationBtnLoading = false;
@@ -40,6 +43,12 @@ class _GMapState extends State<GMap> with SingleTickerProviderStateMixin {
   Future<void> _getCurrentLocation() async {
     final position = await Geolocator().getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
     _goToPosition(position.latitude, position.longitude);
+    // DocumentReference ref = await db.collection("location_data").add({
+    //   "ip_address": "",
+    //   "data": [],
+    //   "created_at": FieldValue.serverTimestamp(),
+    //   "updated_at": null,
+    // });
     setState(() {
       _isLoading = false;
       _isLocationBtnLoading = false;
