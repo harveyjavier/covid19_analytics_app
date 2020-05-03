@@ -30,7 +30,7 @@ class _GMapState extends State<GMap> with SingleTickerProviderStateMixin {
   );
   bool _isIPfetched = false;
   bool _isLocationFetched = false;
-  bool _isDataFetched = false;
+  bool _isUserFetched = false;
   bool _isLocationBtnLoading = false;
   String _ipAddress;
   double _currentLat;
@@ -57,42 +57,49 @@ class _GMapState extends State<GMap> with SingleTickerProviderStateMixin {
     });
   }
 
-  void _addData() async {
-    Map data = {
-      "lat": _currentLat,
-      "lng": _currentLng,
-      "created_at": null, //FieldValue.serverTimestamp(),
-    };
-    DocumentReference ref = await db.collection("location_data").add({
-      "ip_address": _ipAddress,
-      "data": [data],
-      "created_at": FieldValue.serverTimestamp(),
-    });
+  void _storeLocation() async {
+    Map<String,dynamic> locationData = new Map<String,dynamic>();
+    locationData["user_id"] = _userData["id"];
+    locationData["latitude"] = _currentLat;
+    locationData["longitude"] = _currentLng;
+    locationData["created_at"] = FieldValue.serverTimestamp();
+    DocumentReference ref = await db.collection("location_data").add(locationData);
   }
 
-  void _fetchData() async {
-    final QuerySnapshot location_result = await db.collection("location_data").getDocuments();
-    final List<DocumentSnapshot> location_docs = location_result.documents;
-    //print(location_docs);
-    location_docs.forEach((d) {
-      print(d.documentID);
-      d.data["id"] = d.documentID;
-      if (d.data["ip_address"] == _ipAddress.toString()) {
+  void _addUser() async {
+    Map<String,dynamic> userData = new Map<String,dynamic>();
+    userData["id"] = _ipAddress;
+    userData["created_at"] = FieldValue.serverTimestamp();
+    DocumentReference ref = await db.collection("users").add(userData);
+    userData["id"] = ref.documentID;
+    setState(() {
+      _userData = userData;
+    });
+    //print(_userData);
+    _storeLocation();
+  }
+
+  void _fetchUser() async {
+    final QuerySnapshot users_result = await db.collection("users").getDocuments();
+    final List<DocumentSnapshot> users_docs = users_result.documents;
+    //print(users_docs);
+    users_docs.forEach((u) {
+      print(u.documentID);
+      u.data["id"] = u.documentID;
+      if (u.data["ip_address"] == _ipAddress.toString()) {
         setState(() {
-          _userData = d.data;
+          _userData = u.data;
         });
-        print(_userData);
+        //print(_userData);
+        _storeLocation();
       }
     });
     if (_userData == null) {
-      _addData();
+      _addUser();
     }
     setState(() {
-      _isDataFetched = true;
+      _isUserFetched = true;
     });
-
-    //edit
-    //await db.collection("location_data").document(_posts[i]["id"]).updateData(
   }
 
   _getIPaddress(){
@@ -128,7 +135,7 @@ class _GMapState extends State<GMap> with SingleTickerProviderStateMixin {
     super.initState();
     _getIPaddress();
     _getCurrentLocation();
-    _fetchData();
+    _fetchUser();
   }
 
   @override
@@ -145,7 +152,7 @@ class _GMapState extends State<GMap> with SingleTickerProviderStateMixin {
         //   ),
         // ]
       ),
-      body: _isIPfetched && _isLocationFetched && _isDataFetched ?
+      body: _isIPfetched && _isLocationFetched && _isUserFetched ?
           Stack(
             children: <Widget>[
               GoogleMap(
