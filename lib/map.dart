@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/animation.dart';
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:http/http.dart' as http;
 import 'package:date_format/date_format.dart';
 import 'package:charts_flutter/flutter.dart' as charts;
@@ -28,6 +29,7 @@ class _GMapState extends State<GMap> with SingleTickerProviderStateMixin {
     target: LatLng(0.0, 0.0),
     zoom: 14.0,
   );
+  String _mapStyle;
   bool _isIPfetched = false;
   bool _isLocationFetched = false;
   bool _isUserFetched = false;
@@ -68,7 +70,7 @@ class _GMapState extends State<GMap> with SingleTickerProviderStateMixin {
 
   void _addUser() async {
     Map<String,dynamic> userData = new Map<String,dynamic>();
-    userData["id"] = _ipAddress;
+    userData["ip_address"] = _ipAddress;
     userData["created_at"] = FieldValue.serverTimestamp();
     DocumentReference ref = await db.collection("users").add(userData);
     userData["id"] = ref.documentID;
@@ -84,18 +86,19 @@ class _GMapState extends State<GMap> with SingleTickerProviderStateMixin {
     final List<DocumentSnapshot> users_docs = users_result.documents;
     //print(users_docs);
     users_docs.forEach((u) {
-      print(u.documentID);
-      u.data["id"] = u.documentID;
+      //u.data["id"] = u.documentID;
       if (u.data["ip_address"] == _ipAddress.toString()) {
         setState(() {
           _userData = u.data;
+          _userData["id"] = u.documentID;
         });
         //print(_userData);
-        _storeLocation();
       }
     });
     if (_userData == null) {
       _addUser();
+    } else {
+      _storeLocation();
     }
     setState(() {
       _isUserFetched = true;
@@ -128,11 +131,15 @@ class _GMapState extends State<GMap> with SingleTickerProviderStateMixin {
       _isLocationBtnLoading = true;
     });
     _getCurrentLocation();
+    _storeLocation();
   }
 
   @override
   void initState() {
     super.initState();
+    rootBundle.loadString('assets/map_styles/silver.txt').then((string) {
+      _mapStyle = string;
+    });
     _getIPaddress();
     _getCurrentLocation();
     _fetchUser();
@@ -160,6 +167,7 @@ class _GMapState extends State<GMap> with SingleTickerProviderStateMixin {
                 initialCameraPosition: _position,
                 markers: _markers,
                 onMapCreated: (GoogleMapController controller) {
+                  controller.setMapStyle(_mapStyle);
                   _controller.complete(controller);
                 },
                 onCameraMove: _onCameraMove,

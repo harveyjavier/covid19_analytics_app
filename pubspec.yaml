@@ -32,6 +32,7 @@ flutter:
 
   assets:
     - assets/images/
+    - assets/map_styles/
 
   fonts:
     - family: GothamRndBold
