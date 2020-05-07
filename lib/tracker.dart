@@ -8,6 +8,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:localstorage/localstorage.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:date_format/date_format.dart';
 import 'dart:convert' show json;
 import 'dart:io';
 import 'dart:async';
@@ -68,6 +69,22 @@ class TrackerState extends State<Tracker> with SingleTickerProviderStateMixin {
     DocumentReference ref = await db.collection("location_data").add(locationData);
   }
 
+  void _checkIfLocationExistedInDateHour() async {
+    final QuerySnapshot ld_result = await db.collection("location_data").getDocuments();
+    final List<DocumentSnapshot> ld_docs = ld_result.documents;
+    bool locationExisted = false;
+    ld_docs.forEach((ld) {
+      String dateHourNow = formatDate(DateTime.now(), [yyyy, " ", M, " ", d, " ", h, " ", am]);
+      String createdAt = formatDate(ld.data["created_at"].toDate(), [yyyy, " ", M, " ", d, " ", h, " ", am]);
+      if ((ld.data["user_id"] == _userData["id"]) && (dateHourNow == createdAt)) {
+        locationExisted = true;
+      }
+    });
+    if (!locationExisted) {
+      _storeLocation();
+    }
+  }
+
   void _addUser() async {
     Map<String,dynamic> userData = new Map<String,dynamic>();
     userData["ip_address"] = _ipAddress;
@@ -77,28 +94,24 @@ class TrackerState extends State<Tracker> with SingleTickerProviderStateMixin {
     setState(() {
       _userData = userData;
     });
-    //print(_userData);
-    //_storeLocation();
+    _checkIfLocationExistedInDateHour();
   }
 
   void _fetchUser() async {
     final QuerySnapshot users_result = await db.collection("users").getDocuments();
     final List<DocumentSnapshot> users_docs = users_result.documents;
-    //print(users_docs);
     users_docs.forEach((u) {
-      //u.data["id"] = u.documentID;
       if (u.data["ip_address"] == _ipAddress.toString()) {
         setState(() {
           _userData = u.data;
           _userData["id"] = u.documentID;
         });
-        //print(_userData);
       }
     });
     if (_userData == null) {
       _addUser();
     } else {
-      _storeLocation();
+      _checkIfLocationExistedInDateHour();
     }
     setState(() {
       _isUserFetched = true;
@@ -110,7 +123,7 @@ class TrackerState extends State<Tracker> with SingleTickerProviderStateMixin {
       context: context,
       builder: (context) => AlertDialog(
         title: Text("About the Tracker module", style: TextStyle(fontFamily: "GothamRndBold", fontSize: 20, color: Color(0XFF002948)),),
-        content: Text("This module stores your current location to our database which can be used later on for COVID-19 tracing purposes.", style: TextStyle(fontFamily: "GothamRndMedium", color: Color(0XFF002948)),),
+        content: Text("This module stores your current location to our database which can be used later on for contact tracing purposes.", style: TextStyle(fontFamily: "GothamRndMedium", color: Color(0XFF002948)),),
         actions: <Widget>[
           FlatButton(
             child: Text("Close", style: TextStyle(fontFamily: "GothamRndMedium", color: Color(0XFF002948)),),
@@ -141,13 +154,13 @@ class TrackerState extends State<Tracker> with SingleTickerProviderStateMixin {
     //print(position.target);
   }
 
-  _onSearchLocationPressed() {
+  _onLocatePressed() {
     setState(() {
       _isLocationFetched = true;
       _isLocationBtnLoading = true;
     });
     _getCurrentLocation();
-    _storeLocation();
+    _checkIfLocationExistedInDateHour();
   }
 
   @override
@@ -195,7 +208,7 @@ class TrackerState extends State<Tracker> with SingleTickerProviderStateMixin {
                   child: Column(
                     children: <Widget>[
                       FloatingActionButton(
-                        onPressed: _onSearchLocationPressed,
+                        onPressed: _onLocatePressed,
                         materialTapTargetSize: MaterialTapTargetSize.padded,
                         backgroundColor: Colors.blue,
                         child: Icon(
@@ -204,6 +217,13 @@ class TrackerState extends State<Tracker> with SingleTickerProviderStateMixin {
                           : Icons.location_on,
                           size: 36.0,
                         ),
+                      ),
+                      SizedBox(height: 16.0,),
+                      FloatingActionButton(
+                        //onPressed: ,
+                        materialTapTargetSize: MaterialTapTargetSize.padded,
+                        backgroundColor: Colors.blue,
+                        child: Icon(Icons.search, size: 36.0,),
                       ),
                       SizedBox(height: 16.0,),
                     ],
