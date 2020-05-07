@@ -78,7 +78,7 @@ class TrackerState extends State<Tracker> with SingleTickerProviderStateMixin {
       _userData = userData;
     });
     //print(_userData);
-    _storeLocation();
+    //_storeLocation();
   }
 
   void _fetchUser() async {
@@ -103,6 +103,22 @@ class TrackerState extends State<Tracker> with SingleTickerProviderStateMixin {
     setState(() {
       _isUserFetched = true;
     });
+  }
+
+  void _onInfo() async {
+    return showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text("About the Tracker module", style: TextStyle(fontFamily: "GothamRndBold", fontSize: 20, color: Color(0XFF002948)),),
+        content: Text("This module stores your current location to our database which can be used later on for COVID-19 tracing purposes.", style: TextStyle(fontFamily: "GothamRndMedium", color: Color(0XFF002948)),),
+        actions: <Widget>[
+          FlatButton(
+            child: Text("Close", style: TextStyle(fontFamily: "GothamRndMedium", color: Color(0XFF002948)),),
+            onPressed: () => Navigator.pop(context, false),
+          ),
+        ],
+      ),
+    );
   }
 
   _getIPaddress(){
@@ -154,7 +170,8 @@ class TrackerState extends State<Tracker> with SingleTickerProviderStateMixin {
         title: Text("Tracker", style: TextStyle(fontFamily: "GothamRndMedium")),
         actions: <Widget>[
           IconButton(
-            icon: Icon(Icons.info),
+            icon: Icon(Icons.info, color: Colors.white),
+            onPressed: _onInfo,
           ),
         ]
       ),
