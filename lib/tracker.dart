@@ -15,12 +15,12 @@ import 'package:covid19_analytics_app/bar_chart.dart';
 import 'package:covid19_analytics_app/chart_data.dart';
 import 'package:covid19_analytics_app/drawer.dart';
 
-class GMap extends StatefulWidget {
+class Tracker extends StatefulWidget {
   @override
-  State<StatefulWidget> createState() => _GMapState();
+  State<StatefulWidget> createState() => TrackerState();
 }
 
-class _GMapState extends State<GMap> with SingleTickerProviderStateMixin {
+class TrackerState extends State<Tracker> with SingleTickerProviderStateMixin {
   final db = Firestore.instance;
   final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
   Completer<GoogleMapController> _controller = Completer();
@@ -149,15 +149,14 @@ class _GMapState extends State<GMap> with SingleTickerProviderStateMixin {
   Widget build(BuildContext context) {
     return Scaffold(
       key: _scaffoldKey,
-      drawer: AppDrawer(current_screen: "routeMap"),
+      drawer: AppDrawer(current_screen: "routeTracker"),
       appBar: AppBar(
-        title: Text("Map", style: TextStyle(fontFamily: "GothamRndMedium")),
-        // actions: <Widget>[
-        //   IconButton(
-        //     icon: Icon(Icons.refresh),
-        //     onPressed: _fetchChartData,
-        //   ),
-        // ]
+        title: Text("Tracker", style: TextStyle(fontFamily: "GothamRndMedium")),
+        actions: <Widget>[
+          IconButton(
+            icon: Icon(Icons.info),
+          ),
+        ]
       ),
       body: _isIPfetched && _isLocationFetched && _isUserFetched ?
           Stack(
@@ -231,7 +230,6 @@ class _GMapState extends State<GMap> with SingleTickerProviderStateMixin {
 
   @override
   void dispose() {
-    //animationController.dispose();
     super.dispose();
   }
 }

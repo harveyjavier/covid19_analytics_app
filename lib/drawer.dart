@@ -35,14 +35,14 @@ class _AppDrawerState extends State<AppDrawer> {
           ),
           ListTile(
             title: Text(
-              "Map",
+              "Tracker",
               style: TextStyle(fontSize: 18.0),
             ),
             leading: Icon(Icons.map, color: Color(0XFF01579B)),
             onTap: () {
-              widget.current_screen == "routeMap"
+              widget.current_screen == "routeTracker"
               ? Navigator.pop(context)
-              : Navigator.pushNamed(context, "routeMap");
+              : Navigator.pushNamed(context, "routeTracker");
             }
           ),
         ],
