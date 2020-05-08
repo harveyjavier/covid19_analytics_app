@@ -124,34 +124,64 @@ class TrackerState extends State<Tracker> with SingleTickerProviderStateMixin {
 
   void _markLocations() async {
     setState(() {
+      _markers.clear();
       _isMarkingLocations = true;
     });
     final QuerySnapshot ld_result = await db.collection("location_data").getDocuments();
     final List<DocumentSnapshot> ld_docs = ld_result.documents;
+    List ld_summarized = [];
     ld_docs.forEach((ld) {
       final createdAt = DateTime.parse(formatDate(ld.data["created_at"].toDate(), [yyyy, "-", mm, "-", dd]));
       int compareFrom = createdAt.compareTo(_dateFrom);
       int compareTo = createdAt.compareTo(_dateTo);
       final lat = ld.data["latitude"] is String ? double.parse(ld.data["latitude"]) : ld.data["latitude"];
       final lng = ld.data["longitude"] is String ? double.parse(ld.data["longitude"]) : ld.data["longitude"];
-      // print("created at: " + createdAt.toString());
-      // print("from: " + createdAt.compareTo(_dateFrom).toString());
-      // print("to: " + createdAt.compareTo(_dateTo).toString());
-      // print("\n");
       if ((compareFrom == 0 || compareFrom == 1) && (compareTo == 0 || compareTo == -1)) {
-        print(createdAt);
-        setState(() {
-          _markers.add(Marker(
-            markerId: MarkerId(LatLng(lat, lng).toString()),
-            position: LatLng(lat, lng),
-            icon: markerIcon,
-            infoWindow: InfoWindow(
-              title: lat.toString() + "," + lng.toString(),
-              snippet: "" + formatDate(ld.data["created_at"].toDate(), [MM, " ", dd, ", ", yyyy, " at ", h, ":", nn, " ", am]),
-            ),
-          ));
+        bool ldsExists = false;
+        ld_summarized.forEach((lds) {
+          if ((ld.data["latitude"] == lds["latitude"]) && (ld.data["longitude"] == lds["longitude"])){
+            lds["dates"].add(ld.data["created_at"].toDate());
+            ldsExists = true;
+          }
         });
+        if (!ldsExists) {
+          Map<String,dynamic> _lds = new Map<String,dynamic>();
+          _lds["latitude"] = ld.data["latitude"];
+          _lds["longitude"] = ld.data["longitude"];
+          _lds["dates"] = [ ld.data["created_at"].toDate() ];
+          ld_summarized.add(_lds);
+        }
       }
+    });
+    //print(ld_summarized);
+    ld_summarized.forEach((lds) {
+      String _content = "Latitude: " + lds["latitude"].toString() + "\nLongitude: " + lds["longitude"].toString() + "\n";
+      _content += lds["dates"].length == 1 ? "Date visited:" : "Dates visited:";
+      lds["dates"].forEach((d) {
+        _content += "\n- " + formatDate(d, [MM, " ", dd, ", ", yyyy, " at ", h, ":", nn, " ", am]);
+      });
+      setState(() {
+        _markers.add(Marker(
+          markerId: MarkerId(LatLng(lds["latitude"], lds["longitude"]).toString()),
+          position: LatLng(lds["latitude"], lds["longitude"]),
+          icon: markerIcon,
+          onTap: () {
+            return showDialog(
+              context: context,
+              builder: (context) => AlertDialog(
+                title: Text(lds["latitude"].toString() + ", " + lds["longitude"].toString(), style: TextStyle(fontFamily: "GothamRndBold", fontSize: 20, color: Color(0XFF002948)),),
+                content: Text(_content, style: TextStyle(fontFamily: "GothamRndMedium", color: Color(0XFF002948)),),
+                actions: <Widget>[
+                  FlatButton(
+                    child: Text("Close", style: TextStyle(fontFamily: "GothamRndMedium", color: Color(0XFF002948)),),
+                    onPressed: () => Navigator.pop(context, false),
+                  ),
+                ],
+              ),
+            );
+          }
+        ));
+      });
     });
     setState(() {
       _isMarkingLocations = false;
@@ -179,9 +209,9 @@ class TrackerState extends State<Tracker> with SingleTickerProviderStateMixin {
                   FloatingActionButton(
                     materialTapTargetSize: MaterialTapTargetSize.padded,
                     backgroundColor: Colors.blue,
-                    child: Icon(Icons.location_on, size: 36.0, ),
+                    child: Icon(Icons.location_searching, size: 36.0, ),
                   ),
-                  Text(" - reloads your current location.", style: TextStyle(fontFamily: "GothamRndMedium", color: Color(0XFF002948))),
+                  Text(" - reload your current location.", style: TextStyle(fontFamily: "GothamRndMedium", color: Color(0XFF002948))),
                 ],
               ),
               SizedBox(height: 10.0,),
@@ -192,7 +222,7 @@ class TrackerState extends State<Tracker> with SingleTickerProviderStateMixin {
                     backgroundColor: Colors.blue,
                     child: Icon(Icons.search, size: 36.0, ),
                   ),
-                  Text(" - search your locations by date.", style: TextStyle(fontFamily: "GothamRndMedium", color: Color(0XFF002948))),
+                  Text(" - search your visited locations by date.", style: TextStyle(fontFamily: "GothamRndMedium", color: Color(0XFF002948))),
                 ],
               ),
               SizedBox(height: 10.0,),
@@ -255,9 +285,9 @@ class TrackerState extends State<Tracker> with SingleTickerProviderStateMixin {
                   children: <Widget>[
                     Row(
                       children: <Widget>[
-                        Text("Date From: ", style: TextStyle(fontFamily: "GothamRndBold", color: Color(0XFF002948))),
+                        Text("From: ", style: TextStyle(fontFamily: "GothamRndBold", color: Color(0XFF002948))),
                         RaisedButton(
-                          child: Text(_dateFrom == null ? "Pick a Date" : formatDate(_dateFrom, [yyyy, "-", MM, "-", dd]), style: TextStyle(fontFamily: "GothamRndBold", color: Colors.white)),
+                          child: Text(_dateFrom == null ? "Pick a Date" : formatDate(_dateFrom, [MM, " ", dd, ", ", yyyy]), style: TextStyle(fontFamily: "GothamRndBold", color: Colors.white)),
                           color: Colors.blue,
                           onPressed: () {
                             showDatePicker(
@@ -277,9 +307,9 @@ class TrackerState extends State<Tracker> with SingleTickerProviderStateMixin {
                     SizedBox(height: 10.0,),
                     Row(
                       children: <Widget>[
-                        Text("Date To: ", style: TextStyle(fontFamily: "GothamRndBold", color: Color(0XFF002948))),
+                        Text("To: ", style: TextStyle(fontFamily: "GothamRndBold", color: Color(0XFF002948))),
                         RaisedButton(
-                          child: Text(_dateTo == null ? "Pick a Date" : formatDate(_dateTo, [yyyy, "-", MM, "-", dd]), style: TextStyle(fontFamily: "GothamRndBold", color: Colors.white)),
+                          child: Text(_dateTo == null ? "Pick a Date" : formatDate(_dateTo, [MM, " ", dd, ", ", yyyy]), style: TextStyle(fontFamily: "GothamRndBold", color: Colors.white)),
                           color: Colors.blue,
                           onPressed: () {
                             showDatePicker(
@@ -354,6 +384,9 @@ class TrackerState extends State<Tracker> with SingleTickerProviderStateMixin {
   }
 
   _onClearMarkers() {
+    setState(() {
+      _markers.clear();
+    });
   }
 
   @override
@@ -376,7 +409,6 @@ class TrackerState extends State<Tracker> with SingleTickerProviderStateMixin {
   Widget build(BuildContext context) {
     return Scaffold(
       key: _scaffoldKey,
-      drawer: AppDrawer(current_screen: "routeTracker"),
       appBar: AppBar(
         title: Text("Tracker", style: TextStyle(fontFamily: "GothamRndMedium")),
         actions: <Widget>[
@@ -420,13 +452,18 @@ class TrackerState extends State<Tracker> with SingleTickerProviderStateMixin {
                               ),
                               height: 17.0, width: 17.0,
                             )
-                          : Icon(Icons.location_on, size: 36.0,),
+                          : Icon(Icons.location_searching, size: 36.0,),
                       ),
                       SizedBox(height: 16.0,),
                       FloatingActionButton(
                         onPressed: () {
-                          if (!_isMarkingLocations)
-                           { _onSearchPressed(); }
+                          if (!_isMarkingLocations) {
+                            setState(() {
+                              _dateFrom = null;
+                              _dateTo = null;
+                            });
+                            _onSearchPressed();
+                          }
                         },
                         materialTapTargetSize: MaterialTapTargetSize.padded,
                         backgroundColor: Colors.blue,
@@ -441,12 +478,14 @@ class TrackerState extends State<Tracker> with SingleTickerProviderStateMixin {
                           : Icon(Icons.search, size: 36.0,),
                       ),
                       SizedBox(height: 16.0,),
-                      FloatingActionButton(
-                        onPressed: _onClearMarkers(),
-                        materialTapTargetSize: MaterialTapTargetSize.padded,
-                        backgroundColor: Colors.blue,
-                        child: Icon(Icons.location_off, size: 36.0, ),
-                      ),
+                      _markers.isEmpty
+                        ? SizedBox(height: 0.0,)
+                        : FloatingActionButton(
+                            onPressed: _onClearMarkers,
+                            materialTapTargetSize: MaterialTapTargetSize.padded,
+                            backgroundColor: Colors.blue,
+                            child: Icon(Icons.location_off, size: 36.0, ),
+                          ),
                     ],
                   ),
                 ),
