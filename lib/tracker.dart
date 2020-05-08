@@ -25,6 +25,7 @@ class TrackerState extends State<Tracker> with SingleTickerProviderStateMixin {
   final db = Firestore.instance;
   final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
   Completer<GoogleMapController> _controller = Completer();
+  BitmapDescriptor markerIcon;
   final Set<Marker> _markers = {};
   static final CameraPosition _position = CameraPosition(
     target: LatLng(0.0, 0.0),
@@ -35,10 +36,13 @@ class TrackerState extends State<Tracker> with SingleTickerProviderStateMixin {
   bool _isLocationFetched = false;
   bool _isUserFetched = false;
   bool _isLocationBtnLoading = false;
+  bool _isMarkingLocations = false;
   String _ipAddress;
   double _currentLat;
   double _currentLng;
   Map _userData;
+  DateTime _dateFrom;
+  DateTime _dateTo;
 
   void _goToPosition(lat, lng) async {
     final CameraPosition position = CameraPosition(
@@ -118,12 +122,93 @@ class TrackerState extends State<Tracker> with SingleTickerProviderStateMixin {
     });
   }
 
+  void _markLocations() async {
+    setState(() {
+      _isMarkingLocations = true;
+    });
+    final QuerySnapshot ld_result = await db.collection("location_data").getDocuments();
+    final List<DocumentSnapshot> ld_docs = ld_result.documents;
+    ld_docs.forEach((ld) {
+      final createdAt = DateTime.parse(formatDate(ld.data["created_at"].toDate(), [yyyy, "-", mm, "-", dd]));
+      int compareFrom = createdAt.compareTo(_dateFrom);
+      int compareTo = createdAt.compareTo(_dateTo);
+      final lat = ld.data["latitude"] is String ? double.parse(ld.data["latitude"]) : ld.data["latitude"];
+      final lng = ld.data["longitude"] is String ? double.parse(ld.data["longitude"]) : ld.data["longitude"];
+      // print("created at: " + createdAt.toString());
+      // print("from: " + createdAt.compareTo(_dateFrom).toString());
+      // print("to: " + createdAt.compareTo(_dateTo).toString());
+      // print("\n");
+      if ((compareFrom == 0 || compareFrom == 1) && (compareTo == 0 || compareTo == -1)) {
+        print(createdAt);
+        setState(() {
+          _markers.add(Marker(
+            markerId: MarkerId(LatLng(lat, lng).toString()),
+            position: LatLng(lat, lng),
+            icon: markerIcon,
+            infoWindow: InfoWindow(
+              title: lat.toString() + "," + lng.toString(),
+              snippet: "" + formatDate(ld.data["created_at"].toDate(), [MM, " ", dd, ", ", yyyy, " at ", h, ":", nn, " ", am]),
+            ),
+          ));
+        });
+      }
+    });
+    setState(() {
+      _isMarkingLocations = false;
+    });
+    Navigator.pop(context, false);
+  }
+
   void _onInfo() async {
     return showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: Text("About the Tracker module", style: TextStyle(fontFamily: "GothamRndBold", fontSize: 20, color: Color(0XFF002948)),),
-        content: Text("This module stores your current location to our database which can be used later on for contact tracing purposes.", style: TextStyle(fontFamily: "GothamRndMedium", color: Color(0XFF002948)),),
+        content: Container(
+          height: 320.0,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: <Widget>[
+              Text("This module stores your current location to our database which can be used later on for contact tracing purposes.", style: TextStyle(fontFamily: "GothamRndMedium", color: Color(0XFF002948)),),
+              SizedBox(height: 10.0,),
+              Text("Navigation:", style: TextStyle(fontFamily: "GothamRndBold", color: Color(0XFF002948))),
+              SizedBox(height: 10.0,),
+              Row(
+                children: <Widget>[
+                  FloatingActionButton(
+                    materialTapTargetSize: MaterialTapTargetSize.padded,
+                    backgroundColor: Colors.blue,
+                    child: Icon(Icons.location_on, size: 36.0, ),
+                  ),
+                  Text(" - reloads your current location.", style: TextStyle(fontFamily: "GothamRndMedium", color: Color(0XFF002948))),
+                ],
+              ),
+              SizedBox(height: 10.0,),
+              Row(
+                children: <Widget>[
+                  FloatingActionButton(
+                    materialTapTargetSize: MaterialTapTargetSize.padded,
+                    backgroundColor: Colors.blue,
+                    child: Icon(Icons.search, size: 36.0, ),
+                  ),
+                  Text(" - search your locations by date.", style: TextStyle(fontFamily: "GothamRndMedium", color: Color(0XFF002948))),
+                ],
+              ),
+              SizedBox(height: 10.0,),
+              Row(
+                children: <Widget>[
+                  FloatingActionButton(
+                    materialTapTargetSize: MaterialTapTargetSize.padded,
+                    backgroundColor: Colors.blue,
+                    child: Icon(Icons.location_off, size: 36.0, ),
+                  ),
+                  Text(" - clear all pins in the map.", style: TextStyle(fontFamily: "GothamRndMedium", color: Color(0XFF002948))),
+                ],
+              ),
+            ],
+          ),
+        ),
         actions: <Widget>[
           FlatButton(
             child: Text("Close", style: TextStyle(fontFamily: "GothamRndMedium", color: Color(0XFF002948)),),
@@ -131,6 +216,110 @@ class TrackerState extends State<Tracker> with SingleTickerProviderStateMixin {
           ),
         ],
       ),
+    );
+  }
+
+  void _onLocatePressed() async {
+    return showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text("Reload Current Location?", style: TextStyle(fontFamily: "GothamRndBold", fontSize: 20, color: Color(0XFF002948)),),
+        content: Text("Are you sure you want to reload and find your current location?", style: TextStyle(fontFamily: "GothamRndMedium", color: Color(0XFF002948)),),
+        actions: <Widget>[
+          FlatButton(
+            child: Text("Yes", style: TextStyle(fontFamily: "GothamRndMedium", color: Color(0XFF002948)),),
+            onPressed: () => _reloadCurrentLocation(),
+          ),
+          FlatButton(
+            child: Text("No", style: TextStyle(fontFamily: "GothamRndMedium", color: Color(0XFF002948)),),
+            onPressed: () => Navigator.pop(context, false),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _onSearchPressed() async {
+    return showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: Text("Search my locations", style: TextStyle(fontFamily: "GothamRndBold", fontSize: 20, color: Color(0XFF002948)),),
+              content: Container(
+                height: 170.0,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: <Widget>[
+                    Row(
+                      children: <Widget>[
+                        Text("Date From: ", style: TextStyle(fontFamily: "GothamRndBold", color: Color(0XFF002948))),
+                        RaisedButton(
+                          child: Text(_dateFrom == null ? "Pick a Date" : formatDate(_dateFrom, [yyyy, "-", MM, "-", dd]), style: TextStyle(fontFamily: "GothamRndBold", color: Colors.white)),
+                          color: Colors.blue,
+                          onPressed: () {
+                            showDatePicker(
+                              context: context,
+                              initialDate: DateTime.now(),
+                              firstDate: DateTime(1970),
+                              lastDate: DateTime.now(),
+                            ).then((date) {
+                              setState(() {
+                                _dateFrom = date;
+                              });
+                            });
+                          },
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 10.0,),
+                    Row(
+                      children: <Widget>[
+                        Text("Date To: ", style: TextStyle(fontFamily: "GothamRndBold", color: Color(0XFF002948))),
+                        RaisedButton(
+                          child: Text(_dateTo == null ? "Pick a Date" : formatDate(_dateTo, [yyyy, "-", MM, "-", dd]), style: TextStyle(fontFamily: "GothamRndBold", color: Colors.white)),
+                          color: Colors.blue,
+                          onPressed: () {
+                            showDatePicker(
+                              context: context,
+                              initialDate: DateTime.now(),
+                              firstDate: _dateFrom == null ? DateTime(1970) : _dateFrom,
+                              lastDate: DateTime.now(),
+                            ).then((date) {
+                              setState(() {
+                                _dateTo = date;
+                              });
+                            });
+                          },
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              actions: _dateFrom == null || _dateTo == null
+                ? <Widget>[
+                    FlatButton(
+                      child: Text("Close", style: TextStyle(fontFamily: "GothamRndMedium", color: Color(0XFF002948)),),
+                      onPressed: () => Navigator.pop(context, false),
+                    ),
+                  ]
+                : <Widget>[
+                    FlatButton(
+                      child: Text("Search", style: TextStyle(fontFamily: "GothamRndMedium", color: Color(0XFF002948)),),
+                      onPressed: () => _markLocations(),
+                    ),
+                    FlatButton(
+                      child: Text("Close", style: TextStyle(fontFamily: "GothamRndMedium", color: Color(0XFF002948)),),
+                      onPressed: () => Navigator.pop(context, false),
+                    ),
+                  ],
+            );
+          },
+        );
+      }
     );
   }
 
@@ -146,7 +335,7 @@ class TrackerState extends State<Tracker> with SingleTickerProviderStateMixin {
         });
         _isIPfetched = true;
       });
-      print(_ipAddress);
+      //print(_ipAddress);
     });
   }
 
@@ -154,18 +343,27 @@ class TrackerState extends State<Tracker> with SingleTickerProviderStateMixin {
     //print(position.target);
   }
 
-  _onLocatePressed() {
+  _reloadCurrentLocation() {
     setState(() {
       _isLocationFetched = true;
       _isLocationBtnLoading = true;
     });
     _getCurrentLocation();
     _checkIfLocationExistedInDateHour();
+    Navigator.pop(context, false);
+  }
+
+  _onClearMarkers() {
   }
 
   @override
   void initState() {
     super.initState();
+    BitmapDescriptor.fromAssetImage(
+      ImageConfiguration(devicePixelRatio: 2.5),
+      'assets/images/marker.png').then((onValue) {
+      markerIcon = onValue;
+    });
     rootBundle.loadString('assets/map_styles/silver.txt').then((string) {
       _mapStyle = string;
     });
@@ -208,24 +406,47 @@ class TrackerState extends State<Tracker> with SingleTickerProviderStateMixin {
                   child: Column(
                     children: <Widget>[
                       FloatingActionButton(
-                        onPressed: _onLocatePressed,
+                        onPressed: () {
+                          if (!_isLocationBtnLoading)
+                            { _onLocatePressed(); }
+                        },
                         materialTapTargetSize: MaterialTapTargetSize.padded,
                         backgroundColor: Colors.blue,
-                        child: Icon(
-                          _isLocationBtnLoading
-                          ? Icons.location_searching
-                          : Icons.location_on,
-                          size: 36.0,
-                        ),
+                        child: _isLocationBtnLoading
+                          ? SizedBox(
+                              child: CircularProgressIndicator(
+                                strokeWidth: 3.0,
+                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              ),
+                              height: 17.0, width: 17.0,
+                            )
+                          : Icon(Icons.location_on, size: 36.0,),
                       ),
                       SizedBox(height: 16.0,),
                       FloatingActionButton(
-                        //onPressed: ,
+                        onPressed: () {
+                          if (!_isMarkingLocations)
+                           { _onSearchPressed(); }
+                        },
                         materialTapTargetSize: MaterialTapTargetSize.padded,
                         backgroundColor: Colors.blue,
-                        child: Icon(Icons.search, size: 36.0,),
+                        child: _isMarkingLocations
+                          ? SizedBox(
+                              child: CircularProgressIndicator(
+                                strokeWidth: 3.0,
+                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              ),
+                              height: 17.0, width: 17.0,
+                            )
+                          : Icon(Icons.search, size: 36.0,),
                       ),
                       SizedBox(height: 16.0,),
+                      FloatingActionButton(
+                        onPressed: _onClearMarkers(),
+                        materialTapTargetSize: MaterialTapTargetSize.padded,
+                        backgroundColor: Colors.blue,
+                        child: Icon(Icons.location_off, size: 36.0, ),
+                      ),
                     ],
                   ),
                 ),
